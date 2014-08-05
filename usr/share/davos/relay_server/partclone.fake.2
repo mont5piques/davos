@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# ==========================================================
+# Get original partclone binary 
+# ==========================================================
+
+# If caller is symlink, orig is target.orig
+bin=$0
+test -L $0 && bin=/usr/sbin/$(readlink $0)  
+
+# Dialog get ouptut (redirection to have dialog output on stdout)
+toStdOut='3>&2 2>&1 1>&3-'
+
+# Reading udp_options
+udp_options=$(cat /tmp/udp_options)
+
+# Increment the partclone_index
+restore_index=$(expr 1 + `cat /tmp/partclone_index`)
+echo $restore_index > /tmp/partclone_index
+
+# ==========================================================
+# Alert user that multicast will start
+# ==========================================================
+
+dialog --ok-label 'Démarrer' --backtitle "Mandriva Pulse : Imaging Relay Server" --msgbox "Démarrez le client multicast sur les machines clientes, attendez qu'elles soient prêtes et appuyez sur Entrée." 7 70
+{ $bin.orig $@ 2>&3 |pigz -c --fast | udp-sender $udp_options --mcast-rdv-address 224.0.0.$restore_index 2>/dev/null; } 3>&1 1>&2 | partclone_wrapper "Imaging Relay Server"

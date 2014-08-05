@@ -1,0 +1,28 @@
+#!/bin/bash
+# Any error breaks the script
+set -e
+
+# Mounting NFS shares
+source /etc/init.d/mount_pulse_nfs
+
+# Copy clonezilla stuff to /home/partimag
+cp -r /imaging_server/masters/tmp /home/partimag/image
+
+# =======================================================
+# Copying the Fake partclone
+# =======================================================
+
+pclone_bins=$(echo /usr/sbin/partclone.{btrfs,dd,exfat,extfs,fat,hfsp,imager,jfs,minix,ntfs,reiser4,reiserfs,ufs,vmfs,vmfs5,xfs})
+
+# Copy the fake partclone to /usr/sbin
+echo $pclone_bins| xargs -n1 cp /usr/share/davos/relay_client/partclone.fake
+
+# =======================================================
+# Start restore
+# =======================================================
+
+# Reset the partclone_index
+echo "0" > /tmp/partclone_index
+
+# Launch savimg to generate all image files 
+yes | /usr/sbin/ocs-sr -nogui -g auto -e1 auto -e2 -c -r -j2 -p true restoredisk image sda

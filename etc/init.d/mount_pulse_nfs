@@ -1,0 +1,19 @@
+#!/bin/sh
+# Script to 
+#  1 - init DCHP and get next-server address
+#  2 - Mount NFS share
+
+# Running pump if necessary
+pump -s 2> /dev/null || pump
+export imaging_server=$(pump -s | awk '/Next server/ { print $3 }')
+
+if [ ! $? -eq 0 ] || [ -z $imaging_server ]; then
+    echo "Failed to get imaging_server IP, fatal error"
+    exit 0
+fi
+
+# Mounting imaging server NFS
+if [ ! -d /imaging_server/masters/ ]; then
+    mkdir -p /imaging_server/masters/
+    mount $imaging_server:/var/lib/pulse2/imaging/masters/ /imaging_server/masters/
+fi
